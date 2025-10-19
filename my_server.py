@@ -2,12 +2,28 @@ import argparse
 import os
 import sys
 from pathlib import Path
+
 from fastmcp import FastMCP
 from fastmcp.server.middleware.error_handling import ErrorHandlingMiddleware
 from imagesorcery_mcp.logging_config import logger
 
-# 初始化FastMCP应用
-mcp = FastMCP("Image Analysis with Local File Support")
+# Change to project root directory
+project_root = Path(__file__).parent.parent.parent
+os.chdir(project_root)
+logger.info(f"Changed current working directory to: {project_root}")
+
+# Load environment variables from .env if python-dotenv is available (so handlers see keys on import)
+try:
+    from dotenv import load_dotenv  # type: ignore
+
+    env_file = project_root / ".env"
+    if env_file.exists():
+        load_dotenv(env_file)
+        logger.info(f"Loaded environment variables from: {env_file}")
+    else:
+        logger.debug(".env file not found, skipping dotenv loading")
+except Exception:
+    logger.debug("python-dotenv not available, skipping .env loading")
 
 from imagesorcery_mcp.middlewares.telemetry import TelemetryMiddleware  # noqa: E402
 from imagesorcery_mcp.middlewares.validation import (  # noqa: E402
@@ -80,7 +96,6 @@ models.register_resource(mcp)
 
 # Register prompts
 remove_background.register_prompt(mcp)
-
 
 if __name__ == "__main__":
     mcp.run()
